@@ -1,14 +1,14 @@
-import { AnalysisData, AnalysisHistory, CompetitorScore, Recommendation } from '@/types/analysis';
+import { AnalysisData } from '@/types/analysis';
 
 // メモリベースの簡易データストア
 const analysisStore = new Map<string, AnalysisData>();
 
 export class DatabaseService {
-  constructor(useServiceRole: boolean = false) {
+  constructor() {
     // 簡易実装では何もしない
   }
 
-  async saveAnalysis(data: AnalysisData, sessionId: string): Promise<string> {
+  async saveAnalysis(data: AnalysisData): Promise<string> {
     try {
       // メモリストアに保存
       analysisStore.set(data.analysisId, data);
@@ -21,7 +21,7 @@ export class DatabaseService {
   }
 
 
-  async getAnalysis(analysisId: string, sessionId?: string): Promise<{ data: AnalysisData | null; error?: string }> {
+  async getAnalysis(analysisId: string): Promise<{ data: AnalysisData | null; error?: string }> {
     try {
       const data = analysisStore.get(analysisId);
       return { data: data || null };

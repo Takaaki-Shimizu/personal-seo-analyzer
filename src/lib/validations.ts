@@ -20,7 +20,7 @@ export const searchFormSchema = z.object({
 export const analysisRequestSchema = z.object({
   name: searchFormSchema.shape.name,
   location: searchFormSchema.shape.location,
-  searchCount: searchFormSchema.shape.searchCount,
+  searchCount: searchFormSchema.shape.searchCount.optional(),
 });
 
 export const competitorScoreSchema = z.object({

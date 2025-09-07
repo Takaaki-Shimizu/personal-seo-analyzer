@@ -45,8 +45,6 @@ export async function POST(request: NextRequest) {
     }
 
     const databaseService = new DatabaseService();
-    const sessionId = 'temp-session'; // 一時的なセッションID
-
     const analysisId = uuidv4();
     
     await databaseService.saveAnalysis({
@@ -60,9 +58,9 @@ export async function POST(request: NextRequest) {
       opportunities: [],
       createdAt: new Date(),
       status: 'processing',
-    }, sessionId);
+    });
 
-    processAnalysisInBackground(analysisId, validatedData, sessionId);
+    processAnalysisInBackground(analysisId, validatedData);
 
     return NextResponse.json({
       success: true,
@@ -85,12 +83,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processAnalysisInBackground(analysisId: string, request: { name: string; location?: string; searchCount?: number }, sessionId: string) {
+async function processAnalysisInBackground(analysisId: string, request: { name: string; location?: string; searchCount?: number }) {
   try {
     const googleSearchService = new GoogleSearchService();
     const domainAuthorityService = new DomainAuthorityService();
     const analysisEngine = new AnalysisEngine();
-    const databaseService = new DatabaseService(true);
+    const databaseService = new DatabaseService();
 
     const searchResults = await googleSearchService.searchCompetitors(request.name, {
       location: request.location,
@@ -133,12 +131,12 @@ async function processAnalysisInBackground(analysisId: string, request: { name: 
     
     const { data: existingAnalysis } = await databaseService.getAnalysis(analysisId);
     if (existingAnalysis) {
-      await databaseService.saveAnalysis(finalData, sessionId);
+      await databaseService.saveAnalysis(finalData);
     }
 
   } catch (error) {
     console.error('Background analysis error:', error);
-    const databaseService = new DatabaseService(true);
+    const databaseService = new DatabaseService();
     await databaseService.updateAnalysisStatus(analysisId, 'failed');
   }
 }

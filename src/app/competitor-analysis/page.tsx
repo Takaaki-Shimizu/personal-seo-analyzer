@@ -28,11 +28,7 @@ export default function CompetitorAnalysisPage() {
       const result: SearchAnalysisResponse = await response.json();
       
       if (result.success && result.data) {
-        if ('analysisId' in result.data) {
-          setAnalysisId(result.data.analysisId);
-        } else {
-          setAnalysisId(result.data.analysisId);
-        }
+        setAnalysisId(result.data.analysisId);
       } else {
         setError(result.error?.message || '分析の開始に失敗しました');
       }

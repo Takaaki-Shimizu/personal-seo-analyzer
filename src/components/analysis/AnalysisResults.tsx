@@ -140,7 +140,12 @@ export default function AnalysisResults({ analysisId }: AnalysisResultsProps) {
     );
   }
 
-  const { searchResults, analysis, recommendations, searchQuery } = data.data;
+  const { 
+    searchResults = [], 
+    analysis = { totalCompetitors: 0, strongCompetitors: 0, opportunities: 0, averageDomainAuthority: 0 }, 
+    recommendations = [], 
+    searchQuery = ''
+  } = data.data || {};
 
   return (
     <div className="space-y-8">
@@ -158,7 +163,18 @@ export default function AnalysisResults({ analysisId }: AnalysisResultsProps) {
       
       {/* エクスポートボタン */}
       <div className="flex justify-end">
-        <ExportButton data={data.data} />
+        <ExportButton data={{
+          analysisId: data.data?.analysisId || '',
+          searchQuery,
+          searchResults,
+          analysis,
+          recommendations,
+          createdAt: data.data?.createdAt || new Date(),
+          status: data.data?.status || 'completed',
+          location: data.data?.location,
+          searchCount: data.data?.searchCount || 10,
+          opportunities: data.data?.opportunities || []
+        }} />
       </div>
       
       {/* 分析完了メッセージ */}

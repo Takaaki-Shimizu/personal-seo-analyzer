@@ -15,9 +15,11 @@ export default function SearchForm({ onSubmit, isLoading }: SearchFormProps) {
     handleSubmit,
     formState: { errors },
     watch,
-  } = useForm<SearchFormData>({
+  } = useForm({
     resolver: zodResolver(searchFormSchema),
     defaultValues: {
+      name: '',
+      location: '',
       searchCount: 10,
     },
   });
