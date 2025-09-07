@@ -5,10 +5,20 @@ import { DomainAuthorityService } from '@/lib/services/domain-authority';
 import { AnalysisEngine } from '@/lib/services/analysis-engine';
 import { DatabaseService } from '@/lib/services/database';
 import { AnalysisData } from '@/types/analysis';
+import { config, validateConfig } from '@/lib/config';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
+    // 初回アクセス時に設定を検証・ログ出力
+    const validationResult = validateConfig();
+    
+    if (config.logging.enableDetailedLogs) {
+      console.log('=== Search API 開始 ===');
+      console.log('Request URL:', request.url);
+      console.log('Request method:', request.method);
+    }
+    
     let body;
     try {
       body = await request.json();
@@ -85,6 +95,12 @@ export async function POST(request: NextRequest) {
 
 async function processAnalysisInBackground(analysisId: string, request: { name: string; location?: string; searchCount?: number }) {
   try {
+    if (config.logging.enableDetailedLogs) {
+      console.log('=== バックグラウンド分析開始 ===');
+      console.log('分析ID:', analysisId);
+      console.log('リクエスト内容:', request);
+    }
+    
     const googleSearchService = new GoogleSearchService();
     const domainAuthorityService = new DomainAuthorityService();
     const analysisEngine = new AnalysisEngine();
@@ -139,6 +155,14 @@ async function processAnalysisInBackground(analysisId: string, request: { name: 
     const { data: existingAnalysis } = await databaseService.getAnalysis(analysisId);
     if (existingAnalysis) {
       await databaseService.saveAnalysis(finalData);
+      
+      if (config.logging.enableDetailedLogs) {
+        console.log('=== 分析完了 ===');
+        console.log('分析ID:', analysisId);
+        console.log('検索結果数:', finalData.searchResults.length);
+        console.log('推奨項目数:', finalData.recommendations.length);
+        console.log('機会数:', finalData.opportunities.length);
+      }
     }
 
   } catch (error) {

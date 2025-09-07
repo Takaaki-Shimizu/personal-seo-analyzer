@@ -26,17 +26,36 @@ export class GoogleSearchService {
     const { location, count = 10 } = options;
     
     try {
-      // APIキーが設定されていない場合やモックの場合はデモデータを返す
-      if (!config.google.apiKey || config.google.apiKey.includes('mock')) {
+      // 本番環境でのログ出力
+      if (config.logging.enableDetailedLogs) {
+        console.log('=== Google Search Service ===');
+        console.log('検索対象:', name);
+        console.log('オプション:', options);
+        console.log('API Key 設定状況:', !!config.google.apiKey);
+        console.log('モック強制モード:', config.environment.forceApiMockMode);
+      }
+      
+      // APIキーが設定されていない場合やモックモードの場合はデモデータを返す
+      if (!config.google.apiKey || config.google.apiKey.includes('mock') || config.environment.forceApiMockMode) {
+        if (config.logging.logFallbackUsage) {
+          console.log('Google Search API: モックデータを使用します');
+        }
         return this.generateMockSearchResults(name, count);
       }
 
       const query = this.buildSearchQuery(name, location);
       const response = await this.makeSearchRequest(query, count);
       
+      if (config.logging.enableDetailedLogs) {
+        console.log('Google Search API: 実際のAPIから結果を取得しました');
+      }
+      
       return this.parseSearchResults(response);
     } catch (error) {
-      console.error('Google Search API error:', error);
+      if (config.logging.logApiErrors) {
+        console.error('Google Search API error:', error);
+        console.log('フォールバック: モックデータを使用します');
+      }
       // API呼び出しに失敗した場合もモックデータを返す
       return this.generateMockSearchResults(name, count);
     }

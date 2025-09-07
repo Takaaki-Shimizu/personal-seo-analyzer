@@ -14,18 +14,36 @@ export class DomainAuthorityService {
 
   async getDomainMetrics(domains: string[]): Promise<DomainMetrics[]> {
     try {
-      if (this.mozAccessId && this.mozSecretKey) {
+      // 本番環境でのログ出力
+      if (config.logging.enableDetailedLogs) {
+        console.log('=== Domain Authority Service ===');
+        console.log('対象ドメイン数:', domains.length);
+        console.log('Moz API 設定状況:', !!this.mozAccessId && !!this.mozSecretKey);
+        console.log('フォールバック有効:', this.fallbackEnabled);
+      }
+      
+      if (this.mozAccessId && this.mozSecretKey && !config.environment.forceApiMockMode) {
+        if (config.logging.enableDetailedLogs) {
+          console.log('Moz APIを使用してドメインメトリクスを取得します');
+        }
         return await this.getMozMetrics(domains);
       } else if (this.fallbackEnabled) {
+        if (config.logging.logFallbackUsage) {
+          console.log('Domain Authority API: ヒューリスティック計算を使用します');
+        }
         return await this.getFallbackMetrics(domains);
       } else {
         throw new Error('Domain Authority API not configured');
       }
     } catch (error) {
-      console.error('Domain Authority API error:', error);
+      if (config.logging.logApiErrors) {
+        console.error('Domain Authority API error:', error);
+      }
       
       if (this.fallbackEnabled) {
-        console.log('Falling back to heuristic domain authority calculation');
+        if (config.logging.logFallbackUsage) {
+          console.log('フォールバック: ヒューリスティック計算を使用します');
+        }
         return await this.getFallbackMetrics(domains);
       }
       
