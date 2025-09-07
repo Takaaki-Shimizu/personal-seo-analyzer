@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
 import { analysisRequestSchema } from '@/lib/validations';
 import { GoogleSearchService } from '@/lib/services/google-search';
 import { DomainAuthorityService } from '@/lib/services/domain-authority';
@@ -10,31 +9,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient(request);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: { code: 'UNAUTHORIZED', message: 'ログインが必要です' } },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const validatedData = analysisRequestSchema.parse(body);
 
     const databaseService = new DatabaseService();
-
-    const isCached = await databaseService.isCacheValid(validatedData.name, user.id);
-    if (isCached) {
-      const cachedAnalysis = await databaseService.getCachedAnalysis(validatedData.name, user.id);
-      if (cachedAnalysis) {
-        return NextResponse.json({
-          success: true,
-          data: cachedAnalysis,
-        });
-      }
-    }
+    const sessionId = 'temp-session'; // 一時的なセッションID
 
     const analysisId = uuidv4();
     
@@ -49,9 +28,9 @@ export async function POST(request: NextRequest) {
       opportunities: [],
       createdAt: new Date(),
       status: 'processing',
-    }, user.id);
+    }, sessionId);
 
-    processAnalysisInBackground(analysisId, validatedData, user.id);
+    processAnalysisInBackground(analysisId, validatedData, sessionId);
 
     return NextResponse.json({
       success: true,
@@ -88,7 +67,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processAnalysisInBackground(analysisId: string, request: { name: string; location?: string; searchCount?: number }, userId: string) {
+async function processAnalysisInBackground(analysisId: string, request: { name: string; location?: string; searchCount?: number }, sessionId: string) {
   try {
     const googleSearchService = new GoogleSearchService();
     const domainAuthorityService = new DomainAuthorityService();
@@ -136,7 +115,7 @@ async function processAnalysisInBackground(analysisId: string, request: { name: 
     
     const { data: existingAnalysis } = await databaseService.getAnalysis(analysisId);
     if (existingAnalysis) {
-      await databaseService.saveAnalysis(finalData, userId);
+      await databaseService.saveAnalysis(finalData, sessionId);
     }
 
   } catch (error) {
