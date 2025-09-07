@@ -21,7 +21,7 @@ export default function ExportButton({ data }: ExportButtonProps) {
 
     const csvRows = [
       headers.join(','),
-      ...analysisData.searchResults.map(result => [
+      ...(analysisData.searchResults || []).map(result => [
         result.rank,
         `"${result.url}"`,
         `"${result.title.replace(/"/g, '""')}"`,
@@ -85,7 +85,7 @@ export default function ExportButton({ data }: ExportButtonProps) {
       
       {/* エクスポート情報 */}
       <div className="text-sm text-gray-500">
-        <p>{data.searchResults.length}件のデータをエクスポート</p>
+        <p>{(data.searchResults || []).length}件のデータをエクスポート</p>
       </div>
     </div>
   );
