@@ -9,8 +9,40 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const validatedData = analysisRequestSchema.parse(body);
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('JSON parse error:', jsonError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: { 
+            code: 'INVALID_JSON', 
+            message: 'リクエストボディが正しいJSON形式ではありません' 
+          } 
+        },
+        { status: 400 }
+      );
+    }
+
+    let validatedData;
+    try {
+      validatedData = analysisRequestSchema.parse(body);
+    } catch (validationError) {
+      console.error('Validation error:', validationError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: { 
+            code: 'VALIDATION_ERROR', 
+            message: '入力データが正しくありません',
+            details: validationError 
+          } 
+        },
+        { status: 400 }
+      );
+    }
 
     const databaseService = new DatabaseService();
     const sessionId = 'temp-session'; // 一時的なセッションID
@@ -39,27 +71,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Search API error:', error);
-
-    if (error instanceof Error && error.message.includes('parse')) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: { 
-            code: 'VALIDATION_ERROR', 
-            message: '入力データが正しくありません',
-            details: error.message 
-          } 
-        },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json(
       { 
         success: false, 
         error: { 
           code: 'INTERNAL_SERVER_ERROR', 
-          message: '分析の開始に失敗しました' 
+          message: '分析の開始に失敗しました',
+          details: error instanceof Error ? error.message : 'Unknown error'
         } 
       },
       { status: 500 }
