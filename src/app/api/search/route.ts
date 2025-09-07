@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
