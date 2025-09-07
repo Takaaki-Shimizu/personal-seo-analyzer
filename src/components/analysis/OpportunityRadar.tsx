@@ -6,7 +6,7 @@ interface OpportunityRadarProps {
   competitors: CompetitorScore[];
 }
 
-export default function OpportunityRadar({ competitors }: OpportunityRadarProps) {
+export default function OpportunityRadar({ competitors = [] }: OpportunityRadarProps) {
   const calculateOpportunityMetrics = () => {
     const total = competitors.length;
     if (total === 0) return { low: 0, medium: 0, high: 0 };
