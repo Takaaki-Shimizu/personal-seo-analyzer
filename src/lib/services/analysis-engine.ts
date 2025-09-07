@@ -254,9 +254,19 @@ export class AnalysisEngine {
     targetName: string
   ): CompetitorScore[] {
     return searchResults.map((result) => {
+      // URLのパースを安全に行う
+      let hostname: string;
+      try {
+        hostname = new URL(result.url).hostname;
+      } catch (error) {
+        console.warn('Invalid URL format:', result.url);
+        // URLが不正な場合はドメインとしてURLをそのまま使用
+        hostname = result.url.replace(/^https?:\/\//, '').split('/')[0];
+      }
+
       const domainMetric = domainMetrics.find(dm => 
-        result.url.includes(dm.domain) || dm.domain.includes(new URL(result.url).hostname)
-      ) || { domain: new URL(result.url).hostname, domainAuthority: 25 };
+        result.url.includes(dm.domain) || dm.domain.includes(hostname)
+      ) || { domain: hostname, domainAuthority: 25 };
 
       const contentType = this.classifyContentType(result);
       const competitiveStrength = this.calculateCompetitiveStrength(result, domainMetric, targetName);
@@ -266,7 +276,7 @@ export class AnalysisEngine {
         rank: result.rank,
         url: result.url,
         title: result.title,
-        domain: new URL(result.url).hostname,
+        domain: hostname,
         domainAuthority: domainMetric.domainAuthority,
         contentType,
         competitiveStrength,

@@ -1,7 +1,7 @@
 export const config = {
   google: {
-    apiKey: process.env.GOOGLE_CUSTOM_SEARCH_API_KEY!,
-    searchEngineId: process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID!,
+    apiKey: process.env.GOOGLE_CUSTOM_SEARCH_API_KEY || '',
+    searchEngineId: process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID || '',
     maxResults: 20,
     defaultResults: 10,
   },

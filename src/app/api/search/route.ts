@@ -95,7 +95,14 @@ async function processAnalysisInBackground(analysisId: string, request: { name: 
       count: request.searchCount || 10,
     });
 
-    const domains = searchResults.map(result => new URL(result.url).hostname);
+    const domains = searchResults.map(result => {
+      try {
+        return new URL(result.url).hostname;
+      } catch (error) {
+        console.warn('Invalid URL format:', result.url);
+        return result.url.replace(/^https?:\/\//, '').split('/')[0];
+      }
+    });
     const domainMetrics = await domainAuthorityService.batchGetDomainMetrics(domains);
 
     const competitorScores = analysisEngine.analyzeCompetitiveStrength(
