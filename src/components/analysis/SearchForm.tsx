@@ -35,7 +35,7 @@ export default function SearchForm({ onSubmit, isLoading }: SearchFormProps) {
           {...register('name')}
           type="text"
           id="name"
-          className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+          className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
             errors.name ? 'border-red-300' : 'border-gray-300'
           }`}
           placeholder="田中太郎"
@@ -52,7 +52,7 @@ export default function SearchForm({ onSubmit, isLoading }: SearchFormProps) {
         </label>
         <select 
           {...register('location')} 
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">指定なし</option>
           <option value="日本">日本</option>
