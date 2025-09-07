@@ -9,9 +9,9 @@ export async function GET(
     const { analysisId } = await params;
     
     const databaseService = new DatabaseService();
-    const analysis = await databaseService.getAnalysis(analysisId);
+    const analysisResult = await databaseService.getAnalysis(analysisId);
 
-    if (!analysis) {
+    if (!analysisResult.data) {
       return NextResponse.json(
         { success: false, error: { code: 'NOT_FOUND', message: '分析結果が見つかりません' } },
         { status: 404 }
@@ -20,7 +20,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: analysis,
+      data: analysisResult.data,
     });
 
   } catch (error) {
