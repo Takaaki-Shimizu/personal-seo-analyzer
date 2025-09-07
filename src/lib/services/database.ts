@@ -2,15 +2,20 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { AnalysisData, AnalysisHistory, CompetitorScore, Recommendation } from '@/types/analysis';
 
 export class DatabaseService {
-  private supabase;
-
+  private useServiceRole: boolean;
+  
   constructor(useServiceRole: boolean = false) {
-    this.supabase = useServiceRole ? createServiceRoleClient() : createServerSupabaseClient();
+    this.useServiceRole = useServiceRole;
+  }
+
+  private async getSupabaseClient() {
+    return this.useServiceRole ? createServiceRoleClient() : await createServerSupabaseClient();
   }
 
   async saveAnalysis(data: AnalysisData, userId: string): Promise<string> {
     try {
-      const { error: analysisError } = await this.supabase
+      const supabase = await this.getSupabaseClient();
+      const { error: analysisError } = await supabase
         .from('search_analyses')
         .insert({
           id: data.analysisId,
@@ -41,6 +46,7 @@ export class DatabaseService {
   }
 
   private async saveSearchResults(results: CompetitorScore[], analysisId: string): Promise<void> {
+    const supabase = await this.getSupabaseClient();
     const searchResults = results.map(result => ({
       analysis_id: analysisId,
       rank: result.rank,
@@ -54,7 +60,7 @@ export class DatabaseService {
       last_updated: result.lastUpdated?.toISOString(),
     }));
 
-    const { error } = await this.supabase
+    const { error } = await supabase
       .from('search_results')
       .insert(searchResults);
 
@@ -62,6 +68,7 @@ export class DatabaseService {
   }
 
   private async saveRecommendations(recommendations: Recommendation[], analysisId: string): Promise<void> {
+    const supabase = await this.getSupabaseClient();
     const recs = recommendations.map(rec => ({
       id: rec.id,
       analysis_id: analysisId,
@@ -70,7 +77,7 @@ export class DatabaseService {
       priority_score: rec.priorityScore,
     }));
 
-    const { error } = await this.supabase
+    const { error } = await supabase
       .from('analysis_recommendations')
       .insert(recs);
 
@@ -79,7 +86,8 @@ export class DatabaseService {
 
   async getAnalysis(analysisId: string, userId?: string): Promise<AnalysisData | null> {
     try {
-      let query = this.supabase
+      const supabase = await this.getSupabaseClient();
+      let query = supabase
         .from('search_analyses')
         .select(`
           *,
@@ -125,9 +133,10 @@ export class DatabaseService {
     pageSize: number = 10
   ): Promise<{ analyses: AnalysisHistory[]; total: number }> {
     try {
+      const supabase = await this.getSupabaseClient();
       const offset = (page - 1) * pageSize;
 
-      const { data, error, count } = await this.supabase
+      const { data, error, count } = await supabase
         .from('search_analyses')
         .select('*', { count: 'exact' })
         .eq('user_id', userId)
@@ -157,7 +166,8 @@ export class DatabaseService {
 
   async isCacheValid(query: string, userId: string): Promise<boolean> {
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabaseClient();
+      const { data, error } = await supabase
         .from('search_analyses')
         .select('cache_expires_at')
         .eq('user_id', userId)
@@ -176,7 +186,8 @@ export class DatabaseService {
 
   async getCachedAnalysis(query: string, userId: string): Promise<AnalysisData | null> {
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabaseClient();
+      const { data, error } = await supabase
         .from('search_analyses')
         .select(`
           *,
@@ -220,7 +231,8 @@ export class DatabaseService {
   }
 
   async updateAnalysisStatus(analysisId: string, status: string): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabaseClient();
+    const { error } = await supabase
       .from('search_analyses')
       .update({ status })
       .eq('id', analysisId);
@@ -229,7 +241,8 @@ export class DatabaseService {
   }
 
   async deleteAnalysis(analysisId: string, userId: string): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabaseClient();
+    const { error } = await supabase
       .from('search_analyses')
       .delete()
       .eq('id', analysisId)

@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { analysisId } = await params;
     
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {

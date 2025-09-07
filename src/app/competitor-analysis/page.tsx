@@ -1,24 +1,88 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import SearchForm from '@/components/analysis/SearchForm';
 import AnalysisResults from '@/components/analysis/AnalysisResults';
 import { SearchFormData } from '@/lib/validations';
 import { SearchAnalysisResponse } from '@/types/analysis';
+import { supabase } from '@/lib/supabase';
 
 export default function CompetitorAnalysisPage() {
+  const router = useRouter();
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsAuthenticated(true);
+        } else {
+          router.push('/auth');
+          return;
+        }
+      } catch (error) {
+        console.error('認証チェックエラー:', error);
+        router.push('/auth');
+        return;
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // 認証状態の変化を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setIsAuthenticated(false);
+        router.push('/auth');
+      } else if (session) {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
+  // 認証チェック中またはローディング中は読み込み画面を表示
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">認証状態を確認中...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSearchSubmit = async (data: SearchFormData) => {
     setIsAnalyzing(true);
     setError(null);
     
     try {
+      // 現在のセッションからアクセストークンを取得
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 
+        'Content-Type': 'application/json' 
+      };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+      
       const response = await fetch('/api/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(data),
       });
       

@@ -8,13 +8,22 @@ import OpportunityRadar from './OpportunityRadar';
 import RecommendationsList from './RecommendationsList';
 import ExportButton from './ExportButton';
 import { AnalysisDetailResponse } from '@/types/analysis';
+import { supabase } from '@/lib/supabase';
 
 interface AnalysisResultsProps {
   analysisId: string;
 }
 
 const fetcher = async (url: string): Promise<AnalysisDetailResponse> => {
-  const res = await fetch(url);
+  // 現在のセッションからアクセストークンを取得
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {};
+  
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+  
+  const res = await fetch(url, { headers });
   if (!res.ok) {
     throw new Error('分析結果の取得に失敗しました');
   }
