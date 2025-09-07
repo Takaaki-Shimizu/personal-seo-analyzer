@@ -6,7 +6,7 @@ export const searchFormSchema = z.object({
     .min(1, '名前を入力してください')
     .max(100, '名前は100文字以内で入力してください')
     .regex(
-      /^[a-zA-Z\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\s\-]+$/,
+      /^[a-zA-Z\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\u3005\s\-]+$/,
       '有効な名前を入力してください（ひらがな、カタカナ、漢字、英字のみ）'
     ),
   location: z.string().optional(),
