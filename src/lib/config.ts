@@ -6,12 +6,6 @@ export const config = {
     defaultResults: 10,
   },
   
-  supabase: {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  },
-  
   domainAuthority: {
     mozAccessId: process.env.MOZ_ACCESS_ID,
     mozSecretKey: process.env.MOZ_SECRET_KEY,
@@ -37,8 +31,6 @@ export const validateConfig = () => {
   const required = {
     'GOOGLE_CUSTOM_SEARCH_API_KEY': config.google.apiKey,
     'GOOGLE_CUSTOM_SEARCH_ENGINE_ID': config.google.searchEngineId,
-    'NEXT_PUBLIC_SUPABASE_URL': config.supabase.url,
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY': config.supabase.anonKey,
   };
 
   const missing = Object.entries(required)
