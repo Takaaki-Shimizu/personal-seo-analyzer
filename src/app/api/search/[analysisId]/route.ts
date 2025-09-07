@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
 import { DatabaseService } from '@/lib/services/database';
 
 export async function GET(
@@ -9,20 +8,10 @@ export async function GET(
   try {
     const { analysisId } = await params;
     
-    const supabase = await createServerSupabaseClient(request);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: { code: 'UNAUTHORIZED', message: 'ログインが必要です' } },
-        { status: 401 }
-      );
-    }
-
     const databaseService = new DatabaseService();
-    const analysis = await databaseService.getAnalysis(analysisId, user.id);
+    const analysisResult = await databaseService.getAnalysis(analysisId);
 
-    if (!analysis) {
+    if (!analysisResult.data) {
       return NextResponse.json(
         { success: false, error: { code: 'NOT_FOUND', message: '分析結果が見つかりません' } },
         { status: 404 }
@@ -31,7 +20,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: analysis,
+      data: analysisResult.data,
     });
 
   } catch (error) {

@@ -7,7 +7,7 @@ interface CompetitorTableProps {
   competitors: CompetitorScore[];
 }
 
-export default function CompetitorTable({ competitors }: CompetitorTableProps) {
+export default function CompetitorTable({ competitors = [] }: CompetitorTableProps) {
   const [sortBy, setSortBy] = useState<'rank' | 'domainAuthority' | 'competitiveStrength'>('rank');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [filterBy, setFilterBy] = useState<'all' | CompetitiveStrength>('all');

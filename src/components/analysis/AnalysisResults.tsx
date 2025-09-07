@@ -8,22 +8,12 @@ import OpportunityRadar from './OpportunityRadar';
 import RecommendationsList from './RecommendationsList';
 import ExportButton from './ExportButton';
 import { AnalysisDetailResponse } from '@/types/analysis';
-import { supabase } from '@/lib/supabase';
-
 interface AnalysisResultsProps {
   analysisId: string;
 }
 
 const fetcher = async (url: string): Promise<AnalysisDetailResponse> => {
-  // 現在のセッションからアクセストークンを取得
-  const { data: { session } } = await supabase.auth.getSession();
-  const headers: Record<string, string> = {};
-  
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`;
-  }
-  
-  const res = await fetch(url, { headers });
+  const res = await fetch(url);
   if (!res.ok) {
     throw new Error('分析結果の取得に失敗しました');
   }
@@ -150,7 +140,12 @@ export default function AnalysisResults({ analysisId }: AnalysisResultsProps) {
     );
   }
 
-  const { searchResults, analysis, recommendations, searchQuery } = data.data;
+  const { 
+    searchResults = [], 
+    analysis = { totalCompetitors: 0, strongCompetitors: 0, opportunities: 0, averageDomainAuthority: 0 }, 
+    recommendations = [], 
+    searchQuery = ''
+  } = data.data || {};
 
   return (
     <div className="space-y-8">
@@ -168,7 +163,18 @@ export default function AnalysisResults({ analysisId }: AnalysisResultsProps) {
       
       {/* エクスポートボタン */}
       <div className="flex justify-end">
-        <ExportButton data={data.data} />
+        <ExportButton data={{
+          analysisId: data.data?.analysisId || '',
+          searchQuery,
+          searchResults,
+          analysis,
+          recommendations,
+          createdAt: data.data?.createdAt || new Date(),
+          status: data.data?.status || 'completed',
+          location: data.data?.location,
+          searchCount: data.data?.searchCount || 10,
+          opportunities: data.data?.opportunities || []
+        }} />
       </div>
       
       {/* 分析完了メッセージ */}

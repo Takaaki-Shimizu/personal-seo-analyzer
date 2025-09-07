@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
 import { analysisRequestSchema } from '@/lib/validations';
 import { GoogleSearchService } from '@/lib/services/google-search';
 import { DomainAuthorityService } from '@/lib/services/domain-authority';
@@ -10,32 +9,42 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient(request);
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('JSON parse error:', jsonError);
       return NextResponse.json(
-        { success: false, error: { code: 'UNAUTHORIZED', message: 'ログインが必要です' } },
-        { status: 401 }
+        { 
+          success: false, 
+          error: { 
+            code: 'INVALID_JSON', 
+            message: 'リクエストボディが正しいJSON形式ではありません' 
+          } 
+        },
+        { status: 400 }
       );
     }
 
-    const body = await request.json();
-    const validatedData = analysisRequestSchema.parse(body);
-
-    const databaseService = new DatabaseService();
-
-    const isCached = await databaseService.isCacheValid(validatedData.name, user.id);
-    if (isCached) {
-      const cachedAnalysis = await databaseService.getCachedAnalysis(validatedData.name, user.id);
-      if (cachedAnalysis) {
-        return NextResponse.json({
-          success: true,
-          data: cachedAnalysis,
-        });
-      }
+    let validatedData;
+    try {
+      validatedData = analysisRequestSchema.parse(body);
+    } catch (validationError) {
+      console.error('Validation error:', validationError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: { 
+            code: 'VALIDATION_ERROR', 
+            message: '入力データが正しくありません',
+            details: validationError 
+          } 
+        },
+        { status: 400 }
+      );
     }
 
+    const databaseService = new DatabaseService();
     const analysisId = uuidv4();
     
     await databaseService.saveAnalysis({
@@ -49,9 +58,9 @@ export async function POST(request: NextRequest) {
       opportunities: [],
       createdAt: new Date(),
       status: 'processing',
-    }, user.id);
+    });
 
-    processAnalysisInBackground(analysisId, validatedData, user.id);
+    processAnalysisInBackground(analysisId, validatedData);
 
     return NextResponse.json({
       success: true,
@@ -60,27 +69,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Search API error:', error);
-
-    if (error instanceof Error && error.message.includes('parse')) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: { 
-            code: 'VALIDATION_ERROR', 
-            message: '入力データが正しくありません',
-            details: error.message 
-          } 
-        },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json(
       { 
         success: false, 
         error: { 
           code: 'INTERNAL_SERVER_ERROR', 
-          message: '分析の開始に失敗しました' 
+          message: '分析の開始に失敗しました',
+          details: error instanceof Error ? error.message : 'Unknown error'
         } 
       },
       { status: 500 }
@@ -88,12 +83,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processAnalysisInBackground(analysisId: string, request: { name: string; location?: string; searchCount?: number }, userId: string) {
+async function processAnalysisInBackground(analysisId: string, request: { name: string; location?: string; searchCount?: number }) {
   try {
     const googleSearchService = new GoogleSearchService();
     const domainAuthorityService = new DomainAuthorityService();
     const analysisEngine = new AnalysisEngine();
-    const databaseService = new DatabaseService(true);
+    const databaseService = new DatabaseService();
 
     const searchResults = await googleSearchService.searchCompetitors(request.name, {
       location: request.location,
@@ -136,12 +131,12 @@ async function processAnalysisInBackground(analysisId: string, request: { name: 
     
     const { data: existingAnalysis } = await databaseService.getAnalysis(analysisId);
     if (existingAnalysis) {
-      await databaseService.saveAnalysis(finalData, userId);
+      await databaseService.saveAnalysis(finalData);
     }
 
   } catch (error) {
     console.error('Background analysis error:', error);
-    const databaseService = new DatabaseService(true);
+    const databaseService = new DatabaseService();
     await databaseService.updateAnalysisStatus(analysisId, 'failed');
   }
 }

@@ -6,7 +6,7 @@ interface RecommendationsListProps {
   recommendations: Recommendation[];
 }
 
-export default function RecommendationsList({ recommendations }: RecommendationsListProps) {
+export default function RecommendationsList({ recommendations = [] }: RecommendationsListProps) {
   const getRecommendationTypeColor = (type: RecommendationType) => {
     switch (type) {
       case 'immediate': return 'bg-green-50 border-green-200 text-green-800';

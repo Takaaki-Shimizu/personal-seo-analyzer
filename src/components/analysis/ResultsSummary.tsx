@@ -8,7 +8,12 @@ interface ResultsSummaryProps {
 }
 
 export default function ResultsSummary({ analysis, searchQuery }: ResultsSummaryProps) {
-  const { totalCompetitors, strongCompetitors, opportunities, averageDomainAuthority } = analysis;
+  const { 
+    totalCompetitors = 0, 
+    strongCompetitors = 0, 
+    opportunities = 0, 
+    averageDomainAuthority = 0 
+  } = analysis || {};
 
   const competitiveStrengthPercentage = totalCompetitors > 0 
     ? Math.round((strongCompetitors / totalCompetitors) * 100) 
